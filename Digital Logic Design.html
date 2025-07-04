@@ -1,0 +1,1146 @@
+<!DOCTYPE html>
+<html lang="ur">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>2D Logic Simulator</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        body {
+            margin: 0;
+            overflow: hidden;
+            font-family: 'Inter', sans-serif;
+            background-color: #111827;
+            color: white;
+        }
+        #main-container {
+            display: flex;
+            width: 100vw;
+            height: 100vh;
+        }
+        #toolbar {
+            width: 180px;
+            background-color: #1f2937;
+            padding: 1rem;
+            display: flex;
+            flex-direction: column;
+            gap: 0.5rem;
+            border-right: 2px solid #374151;
+            z-index: 10;
+            overflow-y: auto;
+        }
+        .component-btn, .file-btn {
+            background-color: #4b5563;
+            border: none;
+            color: white;
+            padding: 0.75rem;
+            border-radius: 0.5rem;
+            cursor: pointer;
+            text-align: center;
+            font-weight: 500;
+            transition: background-color 0.2s;
+        }
+        .component-btn:hover, .file-btn:hover {
+            background-color: #6b7280;
+        }
+        #canvas-container {
+            flex-grow: 1;
+            position: relative;
+        }
+        canvas {
+            display: block;
+            background-color: #111827;
+        }
+        #info-panel {
+            position: absolute;
+            top: 1rem;
+            left: 1rem;
+            background-color: rgba(31, 41, 55, 0.8);
+            backdrop-filter: blur(10px);
+            padding: 0.5rem 1rem;
+            border-radius: 0.5rem;
+            font-size: 0.9rem;
+            pointer-events: none;
+        }
+        
+        /* --- Loading Screen CSS --- */
+        #loading-screen {
+            position: fixed;
+            width: 100%;
+            height: 100%;
+            background-color: #111827;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 9999;
+            transition: opacity 0.8s ease-out;
+        }
+
+        .loading-container {
+          width: 230px;
+          height: 194px;
+        }
+
+        .terminal_toolbar {
+          display: flex;
+          height: 30px;
+          align-items: center;
+          padding: 0 8px;
+          box-sizing: border-box;
+          border-top-left-radius: 5px;
+          border-top-right-radius: 5px;
+          background: linear-gradient(#504b45 0%, #3c3b37 100%);
+        }
+
+        .butt {
+          display: flex;
+          align-items: center;
+        }
+
+        .btn {
+          display: flex;
+          justify-content: center;
+          align-items: center;
+          padding: 0;
+          margin-right: 5px;
+          font-size: 8px;
+          height: 12px;
+          width: 12px;
+          box-sizing: border-box;
+          border: none;
+          border-radius: 100%;
+          background: linear-gradient(#7d7871 0%, #595953 100%);
+          text-shadow: 0px 1px 0px rgba(255,255,255,0.2);
+          box-shadow: 0px 0px 1px 0px #41403A, 0px 1px 1px 0px #474642;
+        }
+
+        .btn-color {
+          background: #ee411a;
+        }
+
+        .btn:hover {
+          cursor: pointer;
+        }
+
+        .btn:focus {
+          outline: none;
+        }
+
+        .butt--exit {
+          background: linear-gradient(#f37458 0%, #de4c12 100%);
+        }
+
+        .user {
+          color: #d5d0ce;
+          margin-left: 6px;
+          font-size: 14px;
+          line-height: 15px;
+        }
+
+        .terminal_body {
+          background: rgba(56, 4, 40, 0.9);
+          height: calc(100% - 30px);
+          padding-top: 2px;
+          margin-top: -1px;
+          font-size: 12px;
+          border-bottom-left-radius: 5px;
+          border-bottom-right-radius: 5px;
+        }
+
+        .terminal_promt {
+          display: flex;
+        }
+
+        .terminal_promt span {
+          margin-left: 4px;
+        }
+
+        .terminal_user {
+          color: #7eda28;
+        }
+
+        .terminal_location {
+          color: #4878c0;
+        }
+
+        .terminal_bling {
+          color: #dddddd;
+        }
+
+        .terminal_cursor {
+          display: block;
+          height: 14px;
+          width: 5px;
+          margin-left: 10px;
+          animation: curbl 1200ms linear infinite;
+        }
+
+        @keyframes curbl {
+          0% { background: #ffffff; }
+          49% { background: #ffffff; }
+          60% { background: transparent; }
+          99% { background: transparent; }
+          100% { background: #ffffff; }
+        }
+        
+        /* --- Social Buttons CSS --- */
+        .WhatsappBtnNew {
+         width: 45px;
+         height: 45px;
+         display: flex;
+         align-items: center;
+         justify-content: center;
+         border: none;
+         background-color: transparent;
+         position: relative;
+         border-radius: 7px;
+         cursor: pointer;
+         transition: all 0.3s;
+        }
+       .WhatsappSvgContainer {
+         width: 100%;
+         height: 100%;
+         display: flex;
+         align-items: center;
+         justify-content: center;
+         background-color: transparent;
+         backdrop-filter: blur(0px);
+         letter-spacing: 0.8px;
+         border-radius: 10px;
+         transition: all 0.3s;
+         border: 1px solid rgba(156, 156, 156, 0.466);
+       }
+       .WhatsappBG {
+         position: absolute;
+         content: "";
+         width: 100%;
+         height: 100%;
+         background: #075e54;
+         z-index: -1;
+         border-radius: 10px;
+         pointer-events: none;
+         transition: all 0.3s;
+       }
+       .WhatsappBtnNew:hover .WhatsappBG {
+         transform: rotate(35deg);
+         transform-origin: bottom;
+       }
+       .WhatsappBtnNew:hover .WhatsappSvgContainer {
+         background-color: rgba(156, 156, 156, 0.466);
+         backdrop-filter: blur(4px);
+       }
+        .GithubBtn {
+          width: 45px;
+          height: 45px;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          border: none;
+          background-color: transparent;
+          position: relative;
+          border-radius: 7px;
+          cursor: pointer;
+          transition: all .3s;
+        }
+        .GithubSvgContainer {
+          width: 100%;
+          height: 100%;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          background-color: transparent;
+          backdrop-filter: blur(0px);
+          letter-spacing: 0.8px;
+          border-radius: 10px;
+          transition: all .3s;
+          border: 1px solid rgba(156, 156, 156, 0.466);
+        }
+        .GithubBG {
+          position: absolute;
+          content: "";
+          width: 100%;
+          height: 100%;
+          background: #181818;
+          z-index: -1;
+          border-radius: 10px;
+          pointer-events: none;
+          transition: all .3s;
+        }
+        .GithubBtn:hover .GithubBG {
+          transform: rotate(35deg);
+          transform-origin: bottom;
+        }
+        .GithubBtn:hover .GithubSvgContainer {
+          background-color: rgba(156, 156, 156, 0.466);
+          backdrop-filter: blur(4px);
+        }
+        .FacebookBtn {
+         width: 45px;
+         height: 45px;
+         display: flex;
+         align-items: center;
+         justify-content: center;
+         border: none;
+         background-color: transparent;
+         position: relative;
+         border-radius: 7px;
+         cursor: pointer;
+         transition: all 0.3s;
+        }
+       .FacebookSvgContainer {
+         width: 100%;
+         height: 100%;
+         display: flex;
+         align-items: center;
+         justify-content: center;
+         background-color: transparent;
+         backdrop-filter: blur(0px);
+         letter-spacing: 0.8px;
+         border-radius: 10px;
+         transition: all 0.3s;
+         border: 1px solid rgba(156, 156, 156, 0.466);
+       }
+       .FacebookBG {
+         position: absolute;
+         content: "";
+         width: 100%;
+         height: 100%;
+         background: #1877f2;
+         z-index: -1;
+         border-radius: 10px;
+         pointer-events: none;
+         transition: all 0.3s;
+       }
+       .FacebookBtn:hover .FacebookBG {
+         transform: rotate(35deg);
+         transform-origin: bottom;
+       }
+       .FacebookBtn:hover .FacebookSvgContainer {
+         border: 1px solid rgba(230, 230, 230, 0.466);
+         background-color: rgba(204, 204, 204, 0.466);
+         backdrop-filter: blur(4px);
+       }
+    </style>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700&display=swap" rel="stylesheet">
+</head>
+<body>
+    
+    <div id="loading-screen">
+        <div class="loading-container">
+            <div class="terminal_toolbar">
+                <div class="butt">
+                    <button class="btn btn-color"></button>
+                    <button class="btn"></button>
+                    <button class="btn"></button>
+                </div>
+                <p class="user">Digital Logic Design: ~</p>
+            </div>
+            <div class="terminal_body">
+                <div class="terminal_promt">
+                    <span class="terminal_user">Loading Site:</span>
+                    <span class="terminal_location">~</span>
+                    <span class="terminal_bling">$</span>
+                    <span class="terminal_cursor"></span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div id="main-container">
+        <div id="toolbar">
+            <h2 class="text-lg font-bold text-center mb-2">File</h2>
+            <button class="file-btn" id="save-btn">Save Circuit</button>
+            <button class="file-btn" id="load-btn">Load Circuit</button>
+            <input type="file" id="load-input" accept=".json" style="display: none;" />
+            <hr class="border-gray-600 my-2">
+            <h2 class="text-lg font-bold text-center mb-2">Basic</h2>
+            <button class="component-btn" draggable="true" data-type="SWITCH">Input Switch</button>
+            <button class="component-btn" draggable="true" data-type="LED">LED</button>
+            <button class="component-btn" draggable="true" data-type="CLOCK">Clock</button>
+            <hr class="border-gray-600 my-2">
+            <h2 class="text-lg font-bold text-center mb-2">Gates</h2>
+            <button class="component-btn" draggable="true" data-type="AND">AND</button>
+            <button class="component-btn" draggable="true" data-type="OR">OR</button>
+            <button class="component-btn" draggable="true" data-type="NOT">NOT</button>
+            <button class="component-btn" draggable="true" data-type="NAND">NAND</button>
+            <button class="component-btn" draggable="true" data-type="NOR">NOR</button>
+            <button class="component-btn" draggable="true" data-type="XOR">XOR</button>
+            <button class="component-btn" draggable="true" data-type="XNOR">XNOR</button>
+            <hr class="border-gray-600 my-2">
+            <h2 class="text-lg font-bold text-center mb-2">Sequential</h2>
+            <button class="component-btn" draggable="true" data-type="D_FLIP_FLOP">D Flip-Flop</button>
+            <button class="component-btn" draggable="true" data-type="MUX_2_1">2-to-1 MUX</button>
+            <hr class="border-gray-600 my-2">
+            <h2 class="text-lg font-bold text-center mb-2">Advanced</h2>
+            <button class="component-btn" draggable="true" data-type="SEVEN_SEGMENT">7-Segment</button>
+            <button class="component-btn" draggable="true" data-type="ADDER_4BIT">4-Bit Adder</button>
+            <button class="component-btn" draggable="true" data-type="PIXEL_SCREEN">Pixel Screen</button>
+            
+            <div class="mt-auto pt-4">
+                <div class="flex justify-center items-center gap-x-2 mb-4">
+                    <a href="https://wa.me/923294675295" target="_blank">
+                        <button class="WhatsappBtnNew">
+                           <span class="WhatsappSvgContainer">
+                             <svg viewBox="0 0 448 512" fill="white" height="1.6em" xmlns="http://www.w3.org/2000/svg">
+                               <path d="M380.9 97.1C339 55.1 283.2 32 223.9 32c-122.4 0-222 99.6-222 222 0 39.1 10.2 77.3 29.6 111L0 480l117.7-30.9c32.4 17.7 68.9 27 106.1 27h.1c122.3 0 224.1-99.6 224.1-222 0-59.3-25.2-115-67.1-157zm-157 341.6c-33.2 0-65.7-8.9-94-25.7l-6.7-4-69.8 18.3L72 359.2l-4.4-7c-18.5-29.4-28.2-63.3-28.2-98.2 0-101.7 82.8-184.5 184.6-184.5 49.3 0 95.6 19.2 130.4 54.1 34.8 34.9 56.2 81.2 56.1 130.5 0 101.8-84.9 184.6-186.6 184.6zm101.2-138.2c-5.5-2.8-32.8-16.2-37.9-18-5.1-1.9-8.8-2.8-12.5 2.8-3.7 5.6-14.3 18-17.6 21.8-3.2 3.7-6.5 4.2-12 1.4-32.6-16.3-54-29.1-75.5-66-5.7-9.8 5.7-9.1 16.3-30.3 1.8-3.7 .9-6.9-.5-9.7-1.4-2.8-12.5-30.1-17.1-41.2-4.5-10.8-9.1-9.3-12.5-9.5-3.2-.2-6.9-.2-10.6-.2-3.7 0-9.7 1.4-14.8 6.9-5.1 5.6-19.4 19-19.4 46.3 0 27.3 19.9 53.7 22.6 57.4 2.8 3.7 39.1 59.7 94.8 83.8 35.2 15.2 49 16.5 66.6 13.9 10.7-1.6 32.8-13.4 37.4-26.4 4.6-13 4.6-24.1 3.2-26.4-1.3-2.5-5-3.9-10.5-6.6z"></path>
+                             </svg>
+                           </span>
+                           <span class="WhatsappBG"></span>
+                        </button>
+                    </a>
+                    <a href="https://github.com/Bahawal-Ali-Official" target="_blank">
+                        <button class="GithubBtn">
+                           <span class="GithubSvgContainer">
+                               <svg fill="white" viewBox="0 0 496 512" height="1.6em"><path d="M165.9 397.4c0 2-2.3 3.6-5.2 3.6-3.3.3-5.6-1.3-5.6-3.6 0-2 2.3-3.6 5.2-3.6 3-.3 5.6 1.3 5.6 3.6zm-31.1-4.5c-.7 2 1.3 4.3 4.3 4.9 2.6 1 5.6 0 6.2-2s-1.3-4.3-4.3-5.2c-2.6-.7-5.5.3-6.2 2.3zm44.2-1.7c-2.9.7-4.9 2.6-4.6 4.9.3 2 2.9 3.3 5.9 2.6 2.9-.7 4.9-2.6 4.6-4.6-.3-1.9-3-3.2-5.9-2.9zM244.8 8C106.1 8 0 113.3 0 252c0 110.9 69.8 205.8 169.5 239.2 12.8 2.3 17.3-5.6 17.3-12.1 0-6.2-.3-40.4-.3-61.4 0 0-70 15-84.7-29.8 0 0-11.4-29.1-27.8-36.6 0 0-22.9-15.7 1.6-15.4 0 0 24.9 2 38.6 25.8 21.9 38.6 58.6 27.5 72.9 20.9 2.3-16 8.8-27.1 16-33.7-55.9-6.2-112.3-14.3-112.3-110.5 0-27.5 7.6-41.3 23.6-58.9-2.6-6.5-11.1-33.3 2.6-67.9 20.9-6.5 69 27 69 27 20-5.6 41.5-8.5 62.8-8.5s42.8 2.9 62.8 8.5c0 0 48.1-33.6 69-27 13.7 34.7 5.2 61.4 2.6 67.9 16 17.7 25.8 31.5 25.8 58.9 0 96.5-58.9 104.2-114.8 110.5 9.2 7.9 17 22.9 17 46.4 0 33.7-.3 75.4-.3 83.6 0 6.5 4.6 14.4 17.3 12.1C428.2 457.8 496 362.9 496 252 496 113.3 383.5 8 244.8 8zM97.2 352.9c-1.3 1-1 3.3.7 5.2 1.6 1.6 3.9 2.3 5.2 1 1.3-1 1-3.3-.7-5.2-1.6-1.6-3.9-2.3-5.2-1zm-10.8-8.1c-.7 1.3.3 2.9 2.3 3.9 1.6 1 3.6.7 4.3-.7.7-1.3-.3-2.9-2.3-3.9-2-.6-3.6-.3-4.3.7zm32.4 35.6c-1.6 1.3-1 4.3 1.3 6.2 2.3 2.3 5.2 2.6 6.5 1 1.3-1.3.7-4.3-1.3-6.2-2.2-2.3-5.2-2.6-6.5-1zm-11.4-14.7c-1.6 1-1.6 3.6 0 5.9 1.6 2.3 4.3 3.3 5.6 2.3 1.6-1.3 1.6-3.9 0-6.2-1.4-2.3-4-3.3-5.6-2z"></path></svg>
+                           </span>
+                           <span class="GithubBG"></span>
+                        </button>
+                    </a>
+                    <a href="https://web.facebook.com/profile.php?id=100091402734136" target="_blank">
+                       <button class="FacebookBtn">
+                         <span class="FacebookSvgContainer">
+                           <svg viewBox="0 0 320 512" height="1.3em" xmlns="http://www.w3.org/2000/svg" class="FacebookSvgIcon" fill="white">
+                             <path d="M80 299.3V512H196V299.3h86.5l18-97.8H196V166.9c0-51.7 20.3-71.5 72.7-71.5c16.3 0 29.4 .4 37 1.2V7.9C291.4 4 256.4 0 236.2 0C129.3 0 80 50.5 80 159.4v42.1H14v97.8H80z"></path>
+                           </svg>
+                         </span>
+                         <span class="FacebookBG"></span>
+                       </button>
+                    </a>
+                </div>
+                <div class="text-xs text-gray-400">
+                    <p>Pan: Alt + Drag</p>
+                    <p>Zoom: Scroll</p>
+                    <p>Delete: Select + DEL</p>
+                    <p>Disconnect: Dbl Click Wire</p>
+                </div>
+            </div>
+        </div>
+        <div id="canvas-container">
+            <canvas id="simulator-canvas"></canvas>
+            <div id="info-panel">
+                <span id="coords">X: 0, Y: 0</span> | <span id="zoom-level">Zoom: 100%</span>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const canvas = document.getElementById('simulator-canvas');
+        const ctx = canvas.getContext('2d');
+        const toolbar = document.getElementById('toolbar');
+        const coordsEl = document.getElementById('coords');
+        const zoomEl = document.getElementById('zoom-level');
+        const saveBtn = document.getElementById('save-btn');
+        const loadBtn = document.getElementById('load-btn');
+        const loadInput = document.getElementById('load-input');
+
+        let components = [];
+        let wires = [];
+        let nextId = 0;
+
+        let camera = { x: 0, y: 0, zoom: 1 };
+        let mouse = { x: 0, y: 0, worldX: 0, worldY: 0, down: false };
+        let isPanning = false;
+        let dragOffset = { x: 0, y: 0 };
+        
+        let selectedItem = null;
+        let wiringState = { active: false, startNode: null };
+        
+        const ledPathOff = new Path2D("M272 384c9.6-31.9 29.5-59.1 49.2-86.2l0 0c5.2-7.1 10.4-14.2 15.4-21.4c19.8-28.5 31.4-63 31.4-100.3C368 78.8 289.2 0 192 0S16 78.8 16 176c0 37.3 11.6 71.9 31.4 100.3c5 7.2 10.2 14.3 15.4 21.4l0 0c19.8 27.1 39.7 54.4 49.2 86.2H272zM192 512c44.2 0 80-35.8 80-80V416H112v16c0 44.2 35.8 80 80 80zM112 176c0 8.8-7.2 16-16 16s-16-7.2-16-16c0-61.9 50.1-112 112-112c8.8 0 16 7.2 16 16s-7.2 16-16 16c-44.2 0-80 35.8-80 80z");
+        const ledPathOn = new Path2D("M297.2 248.9C311.6 228.3 320 203.2 320 176c0-70.7-57.3-128-128-128S64 105.3 64 176c0 27.2 8.4 52.3 22.8 72.9c3.7 5.3 8.1 11.3 12.8 17.7l0 0c12.9 17.7 28.3 38.9 39.8 59.8c10.4 19 15.7 38.8 18.3 57.5H109c-2.2-12-5.9-23.7-11.8-34.5c-9.9-18-22.2-34.9-34.5-51.8l0 0 0 0c-5.2-7.1-10.4-14.2-15.4-21.4C27.6 247.9 16 213.3 16 176C16 78.8 94.8 0 192 0s176 78.8 176 176c0 37.3-11.6 71.9-31.4 100.3c-5 7.2-10.2 14.3-15.4 21.4l0 0 0 0c-12.3 16.8-24.6 33.7-34.5 51.8c-5.9 10.8-9.6 22.5-11.8 34.5H226.4c2.6-18.7 7.9-38.6 18.3-57.5c11.5-20.9 26.9-42.1 39.8-59.8l0 0 0 0 0 0c4.7-6.4 9-12.4 12.7-17.7zM192 128c-26.5 0-48 21.5-48 48c0 8.8-7.2 16-16 16s-16-7.2-16-16c0-44.2 35.8-80 80-80c8.8 0 16 7.2 16 16s-7.2 16-16 16zm0 384c-44.2 0-80-35.8-80-80V416H272v16c0 44.2-35.8 80-80 80z");
+
+        // --- Sizing and Camera ---
+        function resizeCanvas() {
+            canvas.width = canvas.parentElement.clientWidth;
+            canvas.height = canvas.parentElement.clientHeight;
+            draw();
+        }
+
+        function applyTransform() {
+            ctx.save();
+            ctx.translate(canvas.width / 2, canvas.height / 2);
+            ctx.scale(camera.zoom, camera.zoom);
+            ctx.translate(-canvas.width / 2 + camera.x, -canvas.height / 2 + camera.y);
+        }
+
+        function restoreTransform() {
+            ctx.restore();
+        }
+        
+        function screenToWorld(x, y) {
+            const newX = (x - canvas.width / 2) / camera.zoom + canvas.width / 2 - camera.x;
+            const newY = (y - canvas.height / 2) / camera.zoom + canvas.height / 2 - camera.y;
+            return { x: newX, y: newY };
+        }
+
+        // --- Component Definitions & Drawing ---
+        const componentDefs = {
+            SWITCH: { w: 80, h: 40, inputs: [], outputs: [{x: 40, y: 20}] },
+            LED: { w: 60, h: 80, inputs: [{x: 0, y: 40}], outputs: [] },
+            CLOCK: { w: 60, h: 90, inputs: [], outputs: [{x: 30, y: 45}] },
+            AND: { w: 80, h: 50, inputs: [{x: -40, y: 12.5}, {x: -40, y: 37.5}], outputs: [{x: 40, y: 25}] },
+            OR: { w: 80, h: 50, inputs: [{x: -40, y: 12.5}, {x: -40, y: 37.5}], outputs: [{x: 40, y: 25}] },
+            NOT: { w: 80, h: 50, inputs: [{x: -40, y: 25}], outputs: [{x: 40, y: 25}] },
+            NAND: { w: 80, h: 50, inputs: [{x: -40, y: 12.5}, {x: -40, y: 37.5}], outputs: [{x: 40, y: 25}] },
+            NOR: { w: 80, h: 50, inputs: [{x: -40, y: 12.5}, {x: -40, y: 37.5}], outputs: [{x: 40, y: 25}] },
+            XOR: { w: 80, h: 50, inputs: [{x: -40, y: 12.5}, {x: -40, y: 37.5}], outputs: [{x: 40, y: 25}] },
+            XNOR: { w: 80, h: 50, inputs: [{x: -40, y: 12.5}, {x: -40, y: 37.5}], outputs: [{x: 40, y: 25}] },
+            D_FLIP_FLOP: { w: 80, h: 70, inputs: [{x: -40, y: 17.5, label: 'D'}, {x: -40, y: 52.5, label: 'CLK'}], outputs: [{x: 40, y: 17.5, label: 'Q'}, {x: 40, y: 52.5, label: "Q'"}] },
+            MUX_2_1: { w: 80, h: 70, inputs: [{x: -40, y: 15, label: 'A'}, {x: -40, y: 55, label: 'B'}, {x: 0, y: 70/2 + 25, label: 'S'}], outputs: [{x: 40, y: 35}] },
+            SEVEN_SEGMENT: { w: 80, h: 140, inputs: Array(7).fill(0).map((_, i) => ({x: -40, y: 10 + i * 20})), outputs: [] },
+            ADDER_4BIT: { w: 100, h: 150, inputs: [
+                ...Array(4).fill(0).map((_, i) => ({x: -50, y: 15 + i * 20, label: `A${i}`})),
+                ...Array(4).fill(0).map((_, i) => ({x: -50, y: 15 + 80 + i * 15, label: `B${i}`})),
+                {x: 0, y: 150/2, label: 'Cin'}
+            ], outputs: [
+                ...Array(4).fill(0).map((_, i) => ({x: 50, y: 30 + i * 25, label: `S${i}`})),
+                {x: 0, y: 150/2 + 50, label: 'Cout'}
+            ]},
+            PIXEL_SCREEN: { w: 180, h: 180, inputs: Array(64).fill(0).map((_, i) => ({x: -90, y: 10 + (i % 8) * 20 + (Math.floor(i/8) < 4 ? 0 : 10) })), outputs: [] },
+            COUNTER_16BIT: { w: 120, h: 100, inputs: [{x: -60, y: 50, label: 'CLK'}], outputs: Array(16).fill(0).map((_, i) => ({x: 60, y: 10 + i * 5.5})) },
+            BCD_TO_7_SEGMENT: { w: 100, h: 100, inputs: Array(4).fill(0).map((_, i) => ({x: -50, y: 15 + i * 22})), outputs: Array(7).fill(0).map((_, i) => ({x: 50, y: 10 + i * 15})) },
+        };
+
+        function drawComponent(comp) {
+            ctx.save();
+            ctx.translate(comp.x, comp.y);
+            
+            ctx.strokeStyle = selectedItem === comp ? '#facc15' : '#9ca3af';
+            ctx.lineWidth = 3;
+            
+            const isGate = ['AND', 'OR', 'NOT', 'NAND', 'NOR', 'XOR', 'XNOR'].includes(comp.type);
+
+            if (!isGate && comp.type !== 'SWITCH' && comp.type !== 'LED' && comp.type !== 'CLOCK') {
+                 ctx.fillStyle = '#4b5563';
+                 ctx.beginPath();
+                 ctx.roundRect( -comp.w / 2, -comp.h / 2, comp.w, comp.h, 8);
+                 ctx.fill();
+                 ctx.stroke();
+            }
+
+            ctx.font = 'bold 14px Inter';
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+            
+            if (isGate) {
+                drawGateSymbol(comp);
+            } else {
+                switch(comp.type) {
+                    case 'SWITCH': drawNewSwitch(comp); break;
+                    case 'LED': drawBulbIcon(comp); break;
+                    case 'CLOCK': drawPendulumClock(comp); break;
+                    case 'SEVEN_SEGMENT': draw7Segment(comp); break;
+                    case 'ADDER_4BIT': ctx.fillStyle = 'white'; ctx.fillText('4-Bit Adder', 0, 0); break;
+                    case 'PIXEL_SCREEN': drawPixelScreen(comp); break;
+                    case 'D_FLIP_FLOP': ctx.fillStyle = 'white'; ctx.fillText('D-FF', 0, 0); break;
+                    case 'MUX_2_1': ctx.fillStyle = 'white'; ctx.fillText('MUX', 0, 0); break;
+                    case 'COUNTER_16BIT': ctx.fillStyle = 'white'; ctx.fillText('Counter', 0, 0); break;
+                    case 'BCD_TO_7_SEGMENT': ctx.fillStyle = 'white'; ctx.fillText('Decoder', 0, 0); break;
+                }
+            }
+            
+            // Nodes
+            [...comp.inputs, ...comp.outputs].forEach(node => {
+                ctx.beginPath();
+                ctx.arc(node.x, node.y - comp.h/2, 5, 0, Math.PI * 2);
+                ctx.fillStyle = node.type === 'input' ? '#22c55e' : '#ef4444';
+                ctx.fill();
+            });
+
+            ctx.restore();
+        }
+        
+        function drawGateSymbol(comp) {
+            const w = comp.w;
+            const h = comp.h;
+            const isN = ['NAND', 'NOR', 'XNOR', 'NOT'].includes(comp.type);
+            const outX = w/2 - (isN ? 10 : 0);
+
+            ctx.fillStyle = '#4b5563';
+            ctx.strokeStyle = selectedItem === comp ? '#facc15' : '#9ca3af';
+            ctx.lineWidth = 3;
+
+            ctx.beginPath();
+            switch(comp.type) {
+                case 'AND': case 'NAND':
+                    ctx.moveTo(-w/2, -h/2);
+                    ctx.lineTo(0, -h/2);
+                    ctx.arc(0, 0, h/2, -Math.PI/2, Math.PI/2);
+                    ctx.lineTo(-w/2, h/2);
+                    ctx.closePath();
+                    break;
+                case 'OR': case 'NOR':
+                    ctx.moveTo(-w/2 - 10, -h/2);
+                    ctx.quadraticCurveTo(-w/4, 0, -w/2 - 10, h/2);
+                    ctx.quadraticCurveTo(w/2 - 15, h/2, outX, 0);
+                    ctx.quadraticCurveTo(w/2 - 15, -h/2, -w/2 - 10, -h/2);
+                    break;
+                case 'XOR': case 'XNOR':
+                    ctx.moveTo(-w/2 - 15, -h/2);
+                    ctx.quadraticCurveTo(-w/4 - 5, 0, -w/2 - 15, h/2);
+                    ctx.moveTo(-w/2 - 10, -h/2);
+                    ctx.quadraticCurveTo(-w/4, 0, -w/2 - 10, h/2);
+                    ctx.quadraticCurveTo(w/2 - 15, h/2, outX, 0);
+                    ctx.quadraticCurveTo(w/2 - 15, -h/2, -w/2 - 10, -h/2);
+                    break;
+                case 'NOT':
+                    ctx.moveTo(-w/2 + 10, -h/2);
+                    ctx.lineTo(outX, 0);
+                    ctx.lineTo(-w/2 + 10, h/2);
+                    ctx.closePath();
+                    break;
+            }
+            ctx.fill();
+            ctx.stroke();
+            
+            if (isN) {
+                ctx.beginPath();
+                ctx.arc(w/2 - 5, 0, 5, 0, Math.PI * 2);
+                ctx.stroke();
+            }
+
+            ctx.fillStyle = 'white';
+            ctx.font = '12px Inter';
+            ctx.fillText(comp.type, 0, h/2 + 15);
+        }
+
+        function drawNewSwitch(comp) {
+            const w = comp.w;
+            const h = comp.h;
+            ctx.fillStyle = '#373737';
+            ctx.beginPath();
+            ctx.roundRect(-w/2, -h/2, w, h, 4);
+            ctx.fill();
+            ctx.stroke();
+
+            const toggleWidth = w / 2 - 4;
+            const toggleHeight = h - 8;
+            const toggleX = comp.state ? w / 4 : -w / 4;
+            
+            ctx.fillStyle = '#f3f3f3';
+            ctx.beginPath();
+            ctx.roundRect(toggleX - toggleWidth/2, -h/2 + 4, toggleWidth, toggleHeight, 2);
+            ctx.fill();
+
+            ctx.font = 'bold 14px Inter';
+            if (comp.state) {
+                ctx.fillStyle = '#487bdb';
+                ctx.fillText('on', toggleX, 0);
+            } else {
+                ctx.fillStyle = '#373737';
+                ctx.fillText('off', toggleX, 0);
+            }
+        }
+
+        function drawBulbIcon(comp) {
+            const state = comp.inputs[0].state;
+            const scale = Math.min(comp.w / 384, comp.h / 512) * 0.9;
+            
+            ctx.save();
+            ctx.translate(-192 * scale, -256 * scale);
+            ctx.scale(scale, scale);
+            
+            if (state) {
+                ctx.fillStyle = '#f4af03';
+                ctx.fill(ledPathOn);
+            } else {
+                ctx.fillStyle = '#6b7280';
+                ctx.fill(ledPathOff);
+            }
+            ctx.restore();
+        }
+
+        function drawPendulumClock(comp) {
+            const w = comp.w;
+            const h = comp.h;
+            
+            ctx.fillStyle = 'white';
+            ctx.beginPath();
+            ctx.roundRect(-w/2, -h/2, w, h, 12);
+            ctx.fill();
+            ctx.stroke();
+            
+            ctx.fillStyle = 'black';
+            ctx.fillRect(-w/2 + 10, -h/2 + 10, w - 20, 6);
+
+            const pivotY = -h/2 + 13;
+            const pendulumLength = h - 35;
+            const angle = Math.PI / 4 * Math.sin(Date.now() / 400);
+
+            ctx.save();
+            ctx.translate(0, pivotY);
+            ctx.rotate(angle);
+            
+            ctx.strokeStyle = '#374151';
+            ctx.lineWidth = 3;
+            ctx.beginPath();
+            ctx.moveTo(0, 0);
+            ctx.lineTo(0, pendulumLength);
+            ctx.stroke();
+
+            ctx.beginPath();
+            ctx.arc(0, pendulumLength, 10, 0, Math.PI * 2);
+            ctx.fillStyle = comp.state ? '#60a5fa' : '#171717';
+            ctx.fill();
+            
+            ctx.restore();
+        }
+
+        function draw7Segment(comp) {
+            const segW = 8, segL = 30;
+            const segments = [
+                { x: 0, y: -55, w: segL, h: segW }, // a
+                { x: 19, y: -36, w: segW, h: segL }, // b
+                { x: 19, y: 4,  w: segW, h: segL }, // c
+                { x: 0, y: 23, w: segL, h: segW }, // d
+                { x: -19, y: 4, w: segW, h: segL }, // e
+                { x: -19, y: -36, w: segW, h: segL }, // f
+                { x: 0, y: -16, w: segL, h: segW }  // g
+            ];
+            segments.forEach((s, i) => {
+                ctx.fillStyle = comp.inputs[i].state ? '#ef4444' : '#374151';
+                ctx.fillRect(s.x - s.w/2, s.y - s.h/2, s.w, s.h);
+            });
+        }
+
+        function drawPixelScreen(comp) {
+            const pixelSize = 18;
+            const padding = 10;
+            const gridSize = 8;
+            for(let i = 0; i < 64; i++) {
+                const row = Math.floor(i / gridSize);
+                const col = i % gridSize;
+                const x = -comp.w/2 + padding + col * pixelSize;
+                const y = -comp.h/2 + padding + row * pixelSize;
+                ctx.fillStyle = comp.inputs[i].state ? '#a7f3d0' : '#1f2937';
+                ctx.fillRect(x, y, pixelSize - 2, pixelSize - 2);
+            }
+        }
+        
+        function drawWires() {
+            wires.forEach(wire => {
+                const startNode = findNodeById(wire.startNodeId);
+                const endNode = findNodeById(wire.endNodeId);
+                if (!startNode || !endNode) return;
+                
+                ctx.beginPath();
+                ctx.moveTo(startNode.comp.x + startNode.x, startNode.comp.y + startNode.y - startNode.comp.h/2);
+                ctx.lineTo(endNode.comp.x + endNode.x, endNode.comp.y + endNode.y - endNode.comp.h/2);
+                ctx.strokeStyle = selectedItem === wire ? '#facc15' : (startNode.state ? '#60a5fa' : '#4b5563');
+                ctx.lineWidth = 4;
+                ctx.stroke();
+            });
+            
+            if (wiringState.active && wiringState.startNode) {
+                const startNode = wiringState.startNode;
+                ctx.beginPath();
+                ctx.moveTo(startNode.comp.x + startNode.x, startNode.comp.y + startNode.y - startNode.comp.h/2);
+                ctx.lineTo(mouse.worldX, mouse.worldY);
+                ctx.strokeStyle = '#facc15';
+                ctx.lineWidth = 4;
+                ctx.stroke();
+            }
+        }
+
+        // --- Main Draw Loop ---
+        function draw() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            applyTransform();
+            drawWires();
+            components.forEach(drawComponent);
+            restoreTransform();
+        }
+
+        // --- Logic Simulation ---
+        function simulate() {
+            for (let i = 0; i < 15; i++) {
+                let changed = false;
+                components.forEach(comp => {
+                    let oldState = comp.state;
+                    
+                    if (comp.type === 'CLOCK') {
+                        const angle = Math.PI / 4 * Math.sin(Date.now() * Math.PI / 1000);
+                        const threshold = 0.2;
+                        comp.state = Math.abs(angle) < threshold;
+                    }
+                    
+                    if (comp.type === 'COUNTER_16BIT') {
+                        const clkInput = comp.inputs[0];
+                        const currentClkState = clkInput.state;
+                        if (currentClkState && !comp.lastClkState) {
+                            comp.countValue = (comp.countValue + 1) % 10000;
+                        }
+                        comp.lastClkState = currentClkState;
+                        
+                        const valStr = comp.countValue.toString().padStart(4, '0');
+                        for(let digit = 0; digit < 4; digit++) {
+                            const digitVal = parseInt(valStr[3 - digit]); // Read digits from right to left
+                            const bits = digitVal.toString(2).padStart(4, '0').split('').map(b => b === '1');
+                            for(let bit = 0; bit < 4; bit++) {
+                                if (comp.outputs[digit * 4 + bit]) {
+                                    comp.outputs[digit * 4 + bit].state = bits[3 - bit];
+                                }
+                            }
+                        }
+                    }
+
+                    comp.inputs.forEach(input => {
+                        const wire = wires.find(w => w.endNodeId === input.id);
+                        input.state = wire ? findNodeById(wire.startNodeId).state : false;
+                    });
+                    
+                    let newState = oldState;
+                    switch(comp.type) {
+                        case 'AND': newState = comp.inputs.length > 0 && comp.inputs.every(i => i.state); break;
+                        case 'NAND': newState = !(comp.inputs.length > 0 && comp.inputs.every(i => i.state)); break;
+                        case 'OR': newState = comp.inputs.some(i => i.state); break;
+                        case 'NOR': newState = !comp.inputs.some(i => i.state); break;
+                        case 'XOR': newState = comp.inputs.filter(i => i.state).length === 1; break;
+                        case 'XNOR': newState = comp.inputs.filter(i => i.state).length !== 1; break;
+                        case 'NOT': newState = comp.inputs.length > 0 ? !comp.inputs[0].state : false; break;
+                        case 'LED': newState = comp.inputs.length > 0 ? comp.inputs[0].state : false; break;
+                        case 'ADDER_4BIT':
+                            const a = parseInt(comp.inputs.slice(0, 4).map(i => i.state ? '1' : '0').reverse().join(''), 2);
+                            const b = parseInt(comp.inputs.slice(4, 8).map(i => i.state ? '1' : '0').reverse().join(''), 2);
+                            const cin = comp.inputs[8].state ? 1 : 0;
+                            const sum = a + b + cin;
+                            const sumBits = (sum >>> 0).toString(2).padStart(5, '0').split('').reverse();
+                            comp.outputs.forEach((o, idx) => o.state = sumBits[idx] === '1');
+                            break;
+                        case 'D_FLIP_FLOP':
+                            const clkInput = comp.inputs[1];
+                            const currentClkState = clkInput.state;
+                            if (currentClkState && !comp.lastClkState) { // Rising edge
+                                newState = comp.inputs[0].state;
+                            } else {
+                                newState = comp.state;
+                            }
+                            comp.lastClkState = currentClkState;
+                            break;
+                        case 'MUX_2_1':
+                            const select = comp.inputs[2].state;
+                            newState = select ? comp.inputs[1].state : comp.inputs[0].state;
+                            break;
+                        case 'BCD_TO_7_SEGMENT':
+                            const bcd = parseInt(comp.inputs.map(i => i.state ? '1' : '0').reverse().join(''), 2);
+                            const segments = [
+                              [1,1,1,1,1,1,0], // 0
+                              [0,1,1,0,0,0,0], // 1
+                              [1,1,0,1,1,0,1], // 2
+                              [1,1,1,1,0,0,1], // 3
+                              [0,1,1,0,0,1,1], // 4
+                              [1,0,1,1,0,1,1], // 5
+                              [1,0,1,1,1,1,1], // 6
+                              [1,1,1,0,0,0,0], // 7
+                              [1,1,1,1,1,1,1], // 8
+                              [1,1,1,1,0,1,1]  // 9
+                            ];
+                            const pattern = segments[bcd] || [0,0,0,0,0,0,0];
+                            comp.outputs.forEach((o, i) => o.state = !!pattern[i]);
+                            break;
+                    }
+                    
+                    const isPassive = ['SEVEN_SEGMENT', 'SWITCH', 'CLOCK', 'ADDER_4BIT', 'PIXEL_SCREEN', 'BCD_TO_7_SEGMENT', 'COUNTER_16BIT'].includes(comp.type);
+                    if (!isPassive && newState !== oldState) {
+                        comp.state = newState;
+                        changed = true;
+                    }
+                    
+                    if (comp.type === 'D_FLIP_FLOP') {
+                        comp.outputs[0].state = comp.state;
+                        comp.outputs[1].state = !comp.state;
+                    } else {
+                        comp.outputs.forEach(output => output.state = comp.state);
+                    }
+                });
+                if (!changed) break;
+            }
+        }
+
+        // --- Component & Wire Management ---
+        function createComponentInstance(type, x, y) {
+            const def = componentDefs[type];
+            const newComp = {
+                id: nextId++,
+                type: type,
+                x: x, y: y,
+                w: def.w, h: def.h,
+                state: false,
+                lastClkState: false, // For flip-flops
+                countValue: 0, // For counters
+                inputs: def.inputs.map((n) => ({ ...n, id: nextId++, type: 'input', state: false })),
+                outputs: def.outputs.map((n) => ({ ...n, id: nextId++, type: 'output', state: false })),
+            };
+            newComp.inputs.forEach(n => n.comp = newComp);
+            newComp.outputs.forEach(n => n.comp = newComp);
+            components.push(newComp);
+            return newComp;
+        }
+        
+        function findNodeAt(worldX, worldY) {
+            for (const comp of components) {
+                for (const node of [...comp.inputs, ...comp.outputs]) {
+                    const nodeX = comp.x + node.x;
+                    const nodeY = comp.y + node.y - comp.h/2;
+                    const dist = Math.hypot(worldX - nodeX, worldY - nodeY);
+                    if (dist < 6) {
+                        return node;
+                    }
+                }
+            }
+            return null;
+        }
+
+        function findNodeById(id) {
+            for (const comp of components) {
+                for (const node of [...comp.inputs, ...comp.outputs]) {
+                    if (node.id === id) return node;
+                }
+            }
+            return null;
+        }
+
+        function getComponentAt(worldX, worldY) {
+            for (let i = components.length - 1; i >= 0; i--) {
+                const comp = components[i];
+                if (worldX > comp.x - comp.w/2 && worldX < comp.x + comp.w/2 &&
+                    worldY > comp.y - comp.h/2 && worldY < comp.y + comp.h/2) {
+                    return comp;
+                }
+            }
+            return null;
+        }
+        
+        function getWireAt(worldX, worldY) {
+            for (const wire of wires) {
+                const start = findNodeById(wire.startNodeId);
+                const end = findNodeById(wire.endNodeId);
+                if(!start || !end) continue;
+                
+                const startX = start.comp.x + start.x;
+                const startY = start.comp.y + start.y - start.comp.h/2;
+                const endX = end.comp.x + end.x;
+                const endY = end.comp.y + end.y - end.comp.h/2;
+                
+                const dx = endX - startX;
+                const dy = endY - startY;
+                const lenSq = dx*dx + dy*dy;
+                if (lenSq === 0) continue;
+                let t = ((worldX - startX) * dx + (worldY - startY) * dy) / lenSq;
+                t = Math.max(0, Math.min(1, t));
+                const closestX = startX + t * dx;
+                const closestY = startY + t * dy;
+                const distSq = Math.pow(worldX - closestX, 2) + Math.pow(worldY - closestY, 2);
+                
+                if (distSq < 25) { // 5px tolerance
+                    return wire;
+                }
+            }
+            return null;
+        }
+
+        function deleteSelected() {
+            if (!selectedItem) return;
+
+            if (selectedItem.type) { // It's a component
+                wires = wires.filter(w => {
+                    const startNode = findNodeById(w.startNodeId);
+                    const endNode = findNodeById(w.endNodeId);
+                    return startNode.comp !== selectedItem && endNode.comp !== selectedItem;
+                });
+                components = components.filter(c => c !== selectedItem);
+            } else { // It's a wire
+                wires = wires.filter(w => w !== selectedItem);
+            }
+            selectedItem = null;
+        }
+
+        // --- Event Handlers ---
+        toolbar.addEventListener('dragstart', (e) => {
+            if (e.target.classList.contains('component-btn')) {
+                e.dataTransfer.setData('text/plain', e.target.dataset.type);
+            }
+        });
+
+        canvas.addEventListener('dragover', (e) => e.preventDefault());
+
+        canvas.addEventListener('drop', (e) => {
+            e.preventDefault();
+            const type = e.dataTransfer.getData('text/plain');
+            const { x, y } = screenToWorld(e.clientX - toolbar.offsetWidth, e.clientY);
+            createComponentInstance(type, x, y);
+        });
+
+        canvas.addEventListener('mousedown', (e) => {
+            if (e.altKey) {
+                isPanning = true;
+                return;
+            }
+            mouse.down = true;
+            const pos = screenToWorld(mouse.x, mouse.y);
+            
+            const node = findNodeAt(pos.x, pos.y);
+            if (node) {
+                 if (node.type === 'output') {
+                    wiringState.active = true;
+                    wiringState.startNode = node;
+                } else if (wiringState.active && node.type === 'input') {
+                    const startNode = wiringState.startNode;
+                    if (node.comp.id !== startNode.comp.id && !wires.some(w => w.endNodeId === node.id)) {
+                        wires.push({ id: nextId++, startNodeId: startNode.id, endNodeId: node.id });
+                    }
+                    wiringState.active = false;
+                    wiringState.startNode = null;
+                }
+                return;
+            }
+            
+            wiringState.active = false;
+            
+            const comp = getComponentAt(pos.x, pos.y);
+            if (comp) {
+                selectedItem = comp;
+                dragOffset.x = pos.x - comp.x;
+                dragOffset.y = pos.y - comp.y;
+            } else {
+                selectedItem = getWireAt(pos.x, pos.y);
+            }
+        });
+
+        canvas.addEventListener('mousemove', (e) => {
+            const rect = canvas.getBoundingClientRect();
+            mouse.x = e.clientX - rect.left;
+            mouse.y = e.clientY - rect.top;
+            const worldPos = screenToWorld(mouse.x, mouse.y);
+            mouse.worldX = worldPos.x;
+            mouse.worldY = worldPos.y;
+
+            coordsEl.textContent = `X: ${Math.round(mouse.worldX)}, Y: ${Math.round(mouse.worldY)}`;
+
+            if (isPanning) {
+                camera.x += e.movementX / camera.zoom;
+                camera.y += e.movementY / camera.zoom;
+            } else if (mouse.down && selectedItem && selectedItem.type) { // Dragging a component
+                selectedItem.x = mouse.worldX - dragOffset.x;
+                selectedItem.y = mouse.worldY - dragOffset.y;
+            }
+        });
+
+        canvas.addEventListener('mouseup', () => {
+            mouse.down = false;
+            isPanning = false;
+        });
+        
+        canvas.addEventListener('dblclick', (e) => {
+            const pos = screenToWorld(mouse.x, mouse.y);
+            const comp = getComponentAt(pos.x, pos.y);
+            if (comp && comp.type === 'SWITCH') {
+                comp.state = !comp.state;
+            } else {
+                const wire = getWireAt(pos.x, pos.y);
+                if (wire) {
+                    selectedItem = wire;
+                    deleteSelected();
+                }
+            }
+        });
+
+        canvas.addEventListener('wheel', (e) => {
+            e.preventDefault();
+            const zoomAmount = 1.1;
+            const oldZoom = camera.zoom;
+            if (e.deltaY < 0) {
+                camera.zoom *= zoomAmount;
+            } else {
+                camera.zoom /= zoomAmount;
+            }
+            camera.zoom = Math.max(0.1, Math.min(5, camera.zoom));
+
+            camera.x -= (mouse.x - canvas.width / 2) * (1 / oldZoom - 1 / camera.zoom);
+            camera.y -= (mouse.y - canvas.height / 2) * (1 / oldZoom - 1 / camera.zoom);
+            
+            zoomEl.textContent = `Zoom: ${Math.round(camera.zoom * 100)}%`;
+        });
+        
+        window.addEventListener('keydown', (e) => {
+            if(e.key === 'Delete' || e.key === 'Backspace') {
+                deleteSelected();
+            }
+        });
+        
+        // --- Save/Load ---
+        saveBtn.addEventListener('click', () => {
+            const replacer = (key, value) => {
+                if (key === 'comp') {
+                    return undefined;
+                }
+                return value;
+            };
+
+            const data = {
+                components: components,
+                wires: wires,
+                nextId: nextId
+            };
+            const json = JSON.stringify(data, replacer, 2);
+            const blob = new Blob([json], {type: 'application/json'});
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = 'circuit.json';
+            a.click();
+            URL.revokeObjectURL(url);
+        });
+
+        loadBtn.addEventListener('click', () => loadInput.click());
+
+        loadInput.addEventListener('change', (e) => {
+            const file = e.target.files[0];
+            if (!file) return;
+            const reader = new FileReader();
+            reader.onload = (event) => {
+                try {
+                    const data = JSON.parse(event.target.result);
+                    components = data.components || [];
+                    wires = data.wires || [];
+                    nextId = data.nextId || 0;
+                    // Re-link component references in nodes
+                    components.forEach(comp => {
+                        [...comp.inputs, ...comp.outputs].forEach(node => node.comp = comp);
+                    });
+                    selectedItem = null;
+                } catch (err) {
+                    alert('Error loading file. Make sure it is a valid circuit file.');
+                    console.error(err);
+                }
+            };
+            reader.readAsText(file);
+            e.target.value = ''; // Reset input
+        });
+
+        // --- Initialization ---
+        window.onload = function () {
+            const loadingScreen = document.getElementById('loading-screen');
+            
+            // Hide loading screen
+            loadingScreen.style.opacity = '0';
+            setTimeout(() => {
+                loadingScreen.style.display = 'none';
+            }, 800); // Match the CSS transition duration
+
+            // Initialize app
+            window.addEventListener('resize', resizeCanvas);
+            resizeCanvas();
+            gameLoop();
+        };
+
+        function gameLoop() {
+            simulate();
+            draw();
+            requestAnimationFrame(gameLoop);
+        }
+
+    </script>
+</body>
+</html>
